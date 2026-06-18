@@ -11,7 +11,7 @@ import java.util.List;
 public class EmployeeRepository implements PanacheRepository<Employee> {
 
     public Employee findByEmail(String email) {
-        return find("email", email).firstResultOptional().orElseThrow(() -> new NotFoundException("Employee not found with email: " + email));
+        return find("email", email).firstResultOptional().orElse(null);
     }
 
     public List<Employee> findByDepartmentId(Long departmentId) {
