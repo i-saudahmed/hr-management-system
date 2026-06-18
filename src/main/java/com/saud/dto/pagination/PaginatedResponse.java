@@ -7,7 +7,7 @@ import java.util.List;
 
 @Getter
 @Setter
-public class PageResponse<T> {
+public class PaginatedResponse<T> {
     private List<T> content;
     private int totalPages;
     private long totalElements;
@@ -16,10 +16,10 @@ public class PageResponse<T> {
     private boolean first;
     private boolean last;
 
-    public PageResponse() {
+    public PaginatedResponse() {
     }
 
-    public PageResponse(List<T> content, int totalPages, long totalElements, int pageNumber, int pageSize, boolean first, boolean last) {
+    public PaginatedResponse(List<T> content, int totalPages, long totalElements, int pageNumber, int pageSize, boolean first, boolean last) {
         this.content = content;
         this.totalPages = totalPages;
         this.totalElements = totalElements;

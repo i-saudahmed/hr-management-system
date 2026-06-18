@@ -1,6 +1,6 @@
 package com.saud.service;
 
-import com.saud.dto.pagination.PageResponse;
+import com.saud.dto.pagination.PaginatedResponse;
 import com.saud.dto.request.CreateDepartmentRequest;
 import com.saud.dto.response.DepartmentResponse;
 import com.saud.entity.Department;
@@ -32,7 +32,7 @@ public class DepartmentService {
         return toResponse(createDepartment);
     }
 
-    public PageResponse<DepartmentResponse> getAllDepartments(Integer page, Integer size) {
+    public PaginatedResponse<DepartmentResponse> getAllDepartments(Integer page, Integer size) {
         List<DepartmentResponse> pageDept = repository.findAll().
                 page(page, size)
                 .list().stream().
@@ -47,7 +47,7 @@ public class DepartmentService {
 
         int totalPages = (int) Math.ceil((double) totalElements / size);
 
-        return new PageResponse<>(
+        return new PaginatedResponse<>(
                 pageDept,
                 totalPages,
                 totalElements,

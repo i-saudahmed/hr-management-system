@@ -7,6 +7,7 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Date;
 
 @Getter
 @Setter
@@ -27,11 +28,14 @@ public class EmployeeResponse {
     private Long departmentId;
     private String departmentName;
 
+    private String designation;
+
     private Long managerId;
     private String managerName;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
 
 
 }

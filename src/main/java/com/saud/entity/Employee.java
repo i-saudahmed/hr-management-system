@@ -11,6 +11,7 @@ import lombok.Setter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -47,7 +48,7 @@ public class Employee {
     @Column(name = "status", nullable = false)
     private EmployeeStatus status = EmployeeStatus.ACTIVE;
 
-    @Column(name = "designation")
+    @Column(name = "designation", nullable = false)
     private String designation;
 
     @Column(name = "join_date")

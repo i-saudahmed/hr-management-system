@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.Date;
 
 @Getter
 @Setter
@@ -35,9 +36,10 @@ public class CreateEmployeeRequest {
     @NotBlank(message = "Designation is required")
     private String designation;
 
-    @NotNull(message = "Join date is required")
+//    @NotNull(message = "Join date is required")
     private LocalDate joinDate;
 
     @NotNull(message = "Employment type is required")
     private EmploymentType employmentType; // "FULL_TIME", "PART_TIME", "CONTRACT"
+
 }
