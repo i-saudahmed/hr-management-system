@@ -28,7 +28,7 @@ public class LeaveResponse {
     private Integer totalDays;
     private String reason;
 
-    private LeaveStatus status;
+    private LeaveStatus status; // approve or what
 
     private String managerApprovedByName;   // null until manager acts
     private LocalDateTime managerApprovedAt;
