@@ -287,17 +287,4 @@ public class EmployeeService {
         return mapper.toResponseList(reports);
     }
 
-//    private static @NonNull Employee getEmployee(CreateEmployeeRequest request, Department department, Employee manager) {
-//        Employee createEmployee = new Employee();
-//        createEmployee.setFirstName(request.getFirstName());
-//        createEmployee.setLastName(request.getLastName());
-//        createEmployee.setEmail(request.getEmail());
-//        createEmployee.setRole(request.getRole());
-//        createEmployee.setDesignation(request.getDesignation());
-//        createEmployee.setJoinDate(request.getJoinDate());
-//        createEmployee.setEmploymentType(request.getEmploymentType());
-//        createEmployee.setDepartment(department);
-//        createEmployee.setManager(manager);
-//        return createEmployee;
-//    }
 }
