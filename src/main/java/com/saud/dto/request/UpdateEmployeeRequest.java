@@ -1,11 +1,6 @@
 package com.saud.dto.request;
 
-import com.saud.entity.Department;
-import com.saud.enums.EmployeeStatus;
 import com.saud.enums.EmploymentType;
-import com.saud.enums.Role;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,18 +19,13 @@ public class UpdateEmployeeRequest {
 
     private String email;
 
-    private Boolean isRemoveManager ;
-
-    private Role role;
-
     private Long departmentId;     // optional — reassign department
 
     private Long managerId;        // optional — reassign manager
 
     private EmploymentType employmentType;
 
-    private EmployeeStatus status ;
-
     private String designation;
 
+    private LocalDate joinDate;
 }
