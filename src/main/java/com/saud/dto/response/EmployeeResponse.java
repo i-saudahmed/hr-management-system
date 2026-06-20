@@ -32,7 +32,7 @@ public class EmployeeResponse {
 
     private Long managerId;
     private String managerName;
-
+    private Boolean isRemoveManager ;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

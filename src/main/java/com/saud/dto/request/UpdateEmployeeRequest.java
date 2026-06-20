@@ -1,7 +1,9 @@
 package com.saud.dto.request;
 
+import com.saud.entity.Department;
 import com.saud.enums.EmployeeStatus;
 import com.saud.enums.EmploymentType;
+import com.saud.enums.Role;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.*;
@@ -20,9 +22,11 @@ public class UpdateEmployeeRequest {
     @Size(max = 100, message = "Last name cannot exceed 100 characters")
     private String lastName;
 
-    private String status ;
-
     private String email;
+
+    private Boolean isRemoveManager ;
+
+    private Role role;
 
     private Long departmentId;     // optional — reassign department
 
@@ -30,7 +34,7 @@ public class UpdateEmployeeRequest {
 
     private EmploymentType employmentType;
 
-    private EmployeeStatus employeeStatus ;
+    private EmployeeStatus status ;
 
     private String designation;
 

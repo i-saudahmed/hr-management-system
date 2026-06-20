@@ -3,11 +3,10 @@ package com.saud.service;
 import com.saud.dto.pagination.PaginatedResponse;
 import com.saud.dto.request.CreateEmployeeRequest;
 import com.saud.dto.request.UpdateEmployeeRequest;
+import com.saud.dto.request.UpdateEmployeeStatusRequest;
 import com.saud.dto.response.EmployeeResponse;
 import com.saud.entity.Department;
 import com.saud.entity.Employee;
-import com.saud.enums.EmployeeStatus;
-import com.saud.enums.EmploymentType;
 import com.saud.enums.Role;
 import com.saud.repository.DepartmentRepository;
 import com.saud.repository.EmployeeRepository;
@@ -16,7 +15,9 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
+import mapper.EmployeeMapper;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.jboss.logging.Logger;
 import org.jspecify.annotations.NonNull;
 import org.mindrot.jbcrypt.BCrypt;
 
@@ -31,6 +32,12 @@ public class EmployeeService {
     DepartmentRepository departmentRepository;
     @Inject
     EmployeeRepository employeeRepository;
+
+    @Inject
+    EmployeeMapper mapper ;
+
+    @Inject
+    Logger LOG ;
 
     @Transactional
     public EmployeeResponse createEmployee(CreateEmployeeRequest request) {
@@ -65,7 +72,7 @@ public class EmployeeService {
             }
         }
 
-        Employee createEmployee = getEmployee(request, department, manager);
+        Employee createEmployee = mapper.toEntity(request, department, manager);
 
 //        String password = UUID.randomUUID().toString().substring(0, 8);
 
@@ -78,27 +85,7 @@ public class EmployeeService {
 
         repository.persist(createEmployee);
 
-        return EmployeeResponse.builder()
-                .id(createEmployee.getId())
-                .firstName(createEmployee.getFirstName())
-                .lastName(createEmployee.getLastName())
-                .email(createEmployee.getEmail())
-                .role(createEmployee.getRole())
-                .status(createEmployee.getStatus())
-                .employmentType(createEmployee.getEmploymentType())
-                .designation(createEmployee.getDesignation())
-                .joinDate(createEmployee.getJoinDate())
-                .departmentName(createEmployee.getDepartment() != null ? createEmployee.getDepartment().getName() : null)
-                .departmentId(createEmployee.getDepartment() != null ? createEmployee.getDepartment().getId() : null)
-                .managerId(
-                        createEmployee.getManager() != null ?
-                                createEmployee.getManager().getId() : null)
-                .managerName(
-                        createEmployee.getManager() != null
-                                ? createEmployee.getManager().getFirstName()
-                                : null)
-                .createdAt(createEmployee.getCreatedAt())
-                .updatedAt(createEmployee.getUpdatedAt()).build();
+        return mapper.toResponse(createEmployee);
     }
 
 
@@ -112,40 +99,8 @@ public class EmployeeService {
             throw new IllegalArgumentException("Page must be greater than or equal to 0");  // ✅
         }
         List<EmployeeResponse> employeeResponseList = employeeRepository.findAll().page(page, size).list().stream().map(current ->
-                EmployeeResponse.builder()
-                        .id(current.getId())
-                        .firstName(current.getFirstName())
-                        .lastName(current.getLastName())
-                        .email(current.getEmail())
-                        .role(current.getRole())
-                        .status(current.getStatus())
-                        .employmentType(current.getEmploymentType())
-                        .joinDate(current.getJoinDate())
-                        .departmentId(
-                                current.getDepartment() != null
-                                        ? current.getDepartment().getId()
-                                        : null
-                        )
-                        .departmentName(
-                                current.getDepartment() != null
-                                        ? current.getDepartment().getName()
-                                        : null
-                        )
-                        .designation(current.getDesignation())
-                        .managerId(
-                                current.getManager() != null
-                                        ? current.getManager().getId()
-                                        : null
-                        )
-                        .managerName(
-                                current.getManager() != null
-                                        ? current.getManager().getFirstName() + " " + current.getManager().getLastName()
-                                        : null
-                        )
-                        .createdAt(current.getCreatedAt())
-                        .updatedAt(current.getUpdatedAt())
-                        .build()
-        ).toList();
+                mapper.toResponse(current)).toList();
+
         long totalElements = employeeRepository.count();
         int totalPages = (int) Math.ceil((double) totalElements / size);
         return new PaginatedResponse<EmployeeResponse>(employeeResponseList, totalPages, totalElements, page, size, page == 0, page >= totalPages - 1);
@@ -156,39 +111,7 @@ public class EmployeeService {
         if (employee == null) {
             throw new NotFoundException("Employee not found");
         }
-        return EmployeeResponse.builder()
-                .id(employee.getId())
-                .firstName(employee.getFirstName())
-                .lastName(employee.getLastName())
-                .email(employee.getEmail())
-                .role(employee.getRole())
-                .status(employee.getStatus())
-                .employmentType(employee.getEmploymentType())
-                .joinDate(employee.getJoinDate())
-                .departmentId(
-                        employee.getDepartment() != null
-                                ? employee.getDepartment().getId()
-                                : null
-                )
-                .departmentName(
-                        employee.getDepartment() != null
-                                ? employee.getDepartment().getName()
-                                : null
-                )
-                .designation(employee.getDesignation())
-                .managerId(
-                        employee.getManager() != null
-                                ? employee.getManager().getId()
-                                : null
-                )
-                .managerName(
-                        employee.getManager() != null
-                                ? employee.getManager().getFirstName() + " " + employee.getManager().getLastName()
-                                : null
-                )
-                .createdAt(employee.getCreatedAt())
-                .updatedAt(employee.getUpdatedAt())
-                .build();
+        return mapper.toResponse(employee);
     }
 
     @Transactional
@@ -199,102 +122,182 @@ public class EmployeeService {
         }
     }
 
+
     @Transactional
     public EmployeeResponse updateEmployee(long id, UpdateEmployeeRequest request) {
+
+        LOG.infof("Updating employee with id: %d", id);
+
         Employee employee = employeeRepository.findById(id);
+
         if (employee == null) {
+            LOG.warnf("Employee not found with id: %d", id);
             throw new NotFoundException("Employee not found");
         }
-        if (request.getEmail() != null && !request.getEmail().equals(employee.getEmail())) {
+
+        if (request.getManagerId() != null &&
+                Boolean.TRUE.equals(request.getIsRemoveManager())) {
+            LOG.warnf("Invalid request for employee %d. Cannot assign and remove manager simultaneously", id);
+            throw new IllegalArgumentException(
+                    "Cannot assign and remove manager simultaneously");
+        }
+
+        if (request.getEmail() != null &&
+                !request.getEmail().equals(employee.getEmail())) {
+
+            LOG.infof("Checking email uniqueness for: %s", request.getEmail());
 
             Employee existingEmployee = repository.findByEmail(request.getEmail());
+
             if (existingEmployee != null) {
+                LOG.warnf("Email already exists: %s", request.getEmail());
                 throw new IllegalArgumentException("Email already exists");
             }
+
             employee.setEmail(request.getEmail());
-
-            if (request.getFirstName() != null) {
-                employee.setFirstName(request.getFirstName());
-            }
-            if (request.getLastName() != null) {
-                employee.setLastName(request.getLastName());
-            }
-
-            if(request.getStatus() != null){
-                employee.setStatus(EmployeeStatus.valueOf(request.getStatus()));
-            }
-
-
-            if(request.getEmploymentType() != null){
-                employee.setEmploymentType(EmploymentType.valueOf(request.getEmploymentType()));
-            }
-
-            if(request.getEmployeeStatus() != null){
-                employee.setE(EmploymentType.valueOf(request.getEmploymentType()));
-            }
-
-            if (request.getDesignation() != null) {
-                employee.setDesignation(request.getDesignation());
-            }
-
+            LOG.infof("Updated email for employee %d", id);
         }
+
+        if (request.getFirstName() != null) {
+            employee.setFirstName(request.getFirstName());
+            LOG.infof("Updated first name for employee %d", id);
+        }
+
+        if (request.getLastName() != null) {
+            employee.setLastName(request.getLastName());
+            LOG.infof("Updated last name for employee %d", id);
+        }
+
+        if (request.getStatus() != null) {
+            employee.setStatus(request.getStatus());
+            LOG.infof("Updated status for employee %d to %s",
+                    id, request.getStatus());
+        }
+
+        if (request.getEmploymentType() != null) {
+            employee.setEmploymentType(request.getEmploymentType());
+            LOG.infof("Updated employment type for employee %d to %s",
+                    id, request.getEmploymentType());
+        }
+
+        if (request.getDesignation() != null) {
+            employee.setDesignation(request.getDesignation());
+            LOG.infof("Updated designation for employee %d", id);
+        }
+
+        if (request.getRole() != null) {
+
+            if (request.getRole() == Role.MANAGER &&
+                    employee.getManager() != null) {
+
+                LOG.warnf("Employee %d cannot be promoted to MANAGER while assigned to a manager", id);
+
+                throw new IllegalArgumentException(
+                        "Manager cannot have a manager");
+            }
+
+            employee.setRole(request.getRole());
+
+            LOG.infof("Updated role for employee %d to %s",
+                    id, request.getRole());
+        }
+
+        if (request.getDepartmentId() != null) {
+
+            Department department = departmentRepository
+                    .findByIdOptional(request.getDepartmentId())
+                    .orElseThrow(() -> {
+                        LOG.warnf("Department not found with id: %d",
+                                request.getDepartmentId());
+                        return new NotFoundException("No Dept Found");
+                    });
+
+            employee.setDepartment(department);
+
+            LOG.infof("Updated department for employee %d to department %d",
+                    id, department.getId());
+        }
+
+        if (request.getManagerId() != null) {
+
+            Employee manager = repository
+                    .findByIdOptional(request.getManagerId())
+                    .orElseThrow(() -> {
+                        LOG.warnf("Manager not found with id: %d",
+                                request.getManagerId());
+                        return new NotFoundException("Manager Not found");
+                    });
+
+            if (manager.getId().equals(employee.getId())) {
+                LOG.warnf("Employee %d attempted to assign themselves as manager", id);
+
+                throw new IllegalArgumentException(
+                        "Employee cannot be their own manager");
+            }
+
+            if (manager.getRole() != Role.MANAGER) {
+
+                LOG.warnf("Employee %d selected employee %d as manager, but selected employee is not a manager",
+                        id, manager.getId());
+
+                throw new IllegalArgumentException(
+                        "Selected employee is not Manager");
+            }
+
+            if (employee.getRole() == Role.MANAGER) {
+
+                LOG.warnf("Manager %d cannot be assigned another manager", id);
+
+                throw new IllegalArgumentException(
+                        "Manager cannot have a manager");
+            }
+
+            employee.setManager(manager);
+
+            LOG.infof("Assigned manager %d to employee %d",
+                    manager.getId(), id);
+        }
+        else if (Boolean.TRUE.equals(request.getIsRemoveManager())) {
+
+            employee.setManager(null);
+
+            LOG.infof("Removed manager from employee %d", id);
+        }
+
+        LOG.infof("Employee updated successfully. Employee id: %d", id);
+
+        return getEmployee(id);
     }
 
+    @Transactional
+    public EmployeeResponse updateStatusEmployee(Long id , UpdateEmployeeStatusRequest request){
+        Employee employee = employeeRepository.findById(id);
+        if (employee == null) {
+            throw new NotFoundException("user not found");
+        }
+        if (request.getStatus() != null) {
+            employee.setStatus(request.getStatus());
+        }
+                return mapper.toResponse(employee);
 
-//    public EmployeeResponse updateEmployee(long id, UpdateEmployeeRequest request) {
-//        if (request.getRole() != null) {
-//            if (request.getRole() == Role.MANAGER && request.getManagerId() != null) {
-//                throw new IllegalArgumentException("Manager can't be assigned to manager");
-//            }
-//            employee.setRole(request.getRole());
-//        }
-//
-//        if (request.getEmploymentType() != null) {
-//            employee.setEmploymentType(request.getEmploymentType());
-//        }
-//
-//        if (request.getDesignation() != null) {
-//            employee.setDesignation(request.getDesignation());
-//        }
-//
-//        if (request.getDepartmentId() != null) {
-//            Department department = departmentRepository
-//                    .findByIdOptional(request.getDepartmentId())
-//                    .orElseThrow(() ->
-//                            new NotFoundException("Department not found"));
-//            employee.setDepartment(department);
-//        }
-//
-//        if (request.getManagerId() != null) {
-//            Employee manager = repository.findByIdOptional(request.getManagerId()).orElseThrow(() ->
-//                    new NotFoundException("Manager Not Found"));
-//
-//            if (manager.getRole() != Role.MANAGER) {
-//                throw new IllegalArgumentException(
-//                        "Selected employee is not a manager");
-//            }
-//            employee.setManager(manager);
-//        } else if (request.isRemoveManager()) {
-//            employee.setManager(null);
-//        }
-//
-//        repository.persist(employee);
-//
-//        return getEmployee(id);
+    }
+
+    public List<EmployeeResponse> getDirectReports(Long managerId) {
+        List<Employee> reports = employeeRepository.findByManagerId(managerId);
+        return mapper.toResponseList(reports);
+    }
+
+//    private static @NonNull Employee getEmployee(CreateEmployeeRequest request, Department department, Employee manager) {
+//        Employee createEmployee = new Employee();
+//        createEmployee.setFirstName(request.getFirstName());
+//        createEmployee.setLastName(request.getLastName());
+//        createEmployee.setEmail(request.getEmail());
+//        createEmployee.setRole(request.getRole());
+//        createEmployee.setDesignation(request.getDesignation());
+//        createEmployee.setJoinDate(request.getJoinDate());
+//        createEmployee.setEmploymentType(request.getEmploymentType());
+//        createEmployee.setDepartment(department);
+//        createEmployee.setManager(manager);
+//        return createEmployee;
 //    }
-
-
-    private static @NonNull Employee getEmployee(CreateEmployeeRequest request, Department department, Employee manager) {
-        Employee createEmployee = new Employee();
-        createEmployee.setFirstName(request.getFirstName());
-        createEmployee.setLastName(request.getLastName());
-        createEmployee.setEmail(request.getEmail());
-        createEmployee.setRole(request.getRole());
-        createEmployee.setDesignation(request.getDesignation());
-        createEmployee.setJoinDate(request.getJoinDate());
-        createEmployee.setEmploymentType(request.getEmploymentType());
-        createEmployee.setDepartment(department);
-        createEmployee.setManager(manager);
-        return createEmployee;
-    }
 }

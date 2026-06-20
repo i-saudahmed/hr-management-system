@@ -1,0 +1,2 @@
+ALTER TABLE employee
+ADD COLUMN remove_manager BOOLEAN DEFAULT FALSE;

@@ -66,6 +66,9 @@ public class Employee {
     @JoinColumn(name = "manager_id")
     private Employee manager;
 
+    @Column(name = "remove_manager")
+    private Boolean isRemoveManager = false ;
+
     @OneToMany(mappedBy = "manager", fetch = FetchType.LAZY)
     private List<Employee> directReports = new ArrayList<>();
 
