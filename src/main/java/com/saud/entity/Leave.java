@@ -39,7 +39,7 @@ public class Leave {
     @Column(name = "total_days", nullable = false)
     private Integer totalDays ; // end date - start date + 1
 
-    private String reason ;
+    private String reason ; // emp reason
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)

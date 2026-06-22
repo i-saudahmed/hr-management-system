@@ -1,4 +1,4 @@
-package com.saud.dto.response;
+package com.saud.dto.response.leave;
 
 import com.saud.enums.LeaveStatus;
 import com.saud.enums.LeaveType;

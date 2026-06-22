@@ -1,4 +1,4 @@
-package com.saud.dto.response;
+package com.saud.dto.response.leave;
 
 import lombok.Builder;
 import lombok.Getter;

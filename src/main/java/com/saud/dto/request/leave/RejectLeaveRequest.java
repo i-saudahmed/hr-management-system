@@ -1,4 +1,4 @@
-package com.saud.dto.request;
+package com.saud.dto.request.leave;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

@@ -1,4 +1,4 @@
-package com.saud.dto.request;
+package com.saud.dto.request.leave;
 
 import com.saud.enums.LeaveType;
 import jakarta.validation.constraints.FutureOrPresent;
