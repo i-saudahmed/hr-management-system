@@ -82,7 +82,6 @@ public class LeaveController {
         return leaveService.getTeamLeaves(managerId);
     }
 
-
     @GET
     @Path("/pending")
     public List<LeaveResponse> getPendingLeaves(){
