@@ -8,10 +8,12 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
+import io.quarkus.security.Authenticated;
 
 
 @ApplicationScoped
 @Path("/api/departments")
+@Authenticated
 public class DepartmentController {
 
     @Inject
