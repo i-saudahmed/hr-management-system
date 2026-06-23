@@ -29,7 +29,7 @@ public class LeaveBalance {
     private Integer year;             // e.g. 2026
 
     @Column(name = "total_allotted", nullable = false)
-    private Integer totalAllotted;    // e.g. 20 annual days for the year
+    private Integer totalAllotted = 40;    // e.g. 20 annual days for the year
 
     @Column(name = "used", nullable = false)
     private Integer used = 0;         // how many days already taken

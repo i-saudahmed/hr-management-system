@@ -18,7 +18,6 @@ import jakarta.ws.rs.NotFoundException;
 import mapper.EmployeeMapper;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.jboss.logging.Logger;
-import org.jspecify.annotations.NonNull;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.util.List;
@@ -36,58 +35,147 @@ public class EmployeeService {
     @Inject
     EmployeeMapper mapper ;
 
-    @Inject
-    Logger LOG ;
+    private static final Logger LOG = Logger.getLogger(EmployeeService.class);
 
-    @Transactional
-    public EmployeeResponse createEmployee(CreateEmployeeRequest request) {
 
-        Employee employee = repository.findByEmail(request.getEmail());
+//    @Transactional
+//    public EmployeeResponse createEmployee(CreateEmployeeRequest request) {
+//
+//        Employee employee = repository.findByEmail(request.getEmail());
+//
+//        if (employee != null) {
+//            throw new IllegalArgumentException("Email Already Exists");
+//        }
+//
+//        Department department = departmentRepository
+//                .findByIdOptional(request.getDepartmentId())
+//                .orElseThrow(() ->
+//                        new NotFoundException("Department not found"));
+//
+//        Employee manager = null;
+//
+//        if (request.getManagerId() != null) {
+//            manager = repository.findByIdOptional(request.getManagerId()).orElseThrow(() ->
+//                    new NotFoundException("Manager Not Found"));
+//
+//            if (manager.getRole() != Role.MANAGER) {
+//                throw new IllegalArgumentException(
+//                        "Selected employee is not a manager");
+//            }
+//
+//        }
+//
+//        if (request.getRole() == Role.MANAGER) {
+//            if (request.getManagerId() != null) {
+//                throw new ForbiddenException("Manager cant be assigned to manager");
+//            }
+//        }
+//
+//        Employee createEmployee = mapper.toEntity(request, department, manager);
+//
+////        String password = UUID.randomUUID().toString().substring(0, 8);
+//
+//        String characters =
+//                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+//        String password = RandomStringUtils.secure().next(8, characters);
+//        System.out.println(password + "password");
+//        String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+//        createEmployee.setPassword(hashedPassword);
+//
+//        repository.persist(createEmployee);
+//
+//        return mapper.toResponse(createEmployee);
+//    }
 
-        if (employee != null) {
-            throw new IllegalArgumentException("Email Already Exists");
-        }
+@Transactional
+public EmployeeResponse createEmployee(CreateEmployeeRequest request) {
 
-        Department department = departmentRepository
-                .findByIdOptional(request.getDepartmentId())
-                .orElseThrow(() ->
-                        new NotFoundException("Department not found"));
 
-        Employee manager = null;
+    LOG.infof("Creating employee with email: %s", request.getEmail());
 
-        if (request.getManagerId() != null) {
-            manager = repository.findByIdOptional(request.getManagerId()).orElseThrow(() ->
-                    new NotFoundException("Manager Not Found"));
+    Employee employee = repository.findByEmail(request.getEmail());
 
-            if (manager.getRole() != Role.MANAGER) {
-                throw new IllegalArgumentException(
-                        "Selected employee is not a manager");
-            }
-
-        }
-
-        if (request.getRole() == Role.MANAGER) {
-            if (request.getManagerId() != null) {
-                throw new ForbiddenException("Manager cant be assigned to manager");
-            }
-        }
-
-        Employee createEmployee = mapper.toEntity(request, department, manager);
-
-//        String password = UUID.randomUUID().toString().substring(0, 8);
-
-        String characters =
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        String password = RandomStringUtils.secure().next(8, characters);
-        System.out.println(password);
-        String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
-        createEmployee.setPassword(hashedPassword);
-
-        repository.persist(createEmployee);
-
-        return mapper.toResponse(createEmployee);
+    if (employee != null) {
+        LOG.warnf("Employee creation failed. Email already exists: %s",
+                request.getEmail());
+        throw new IllegalArgumentException("Email Already Exists");
     }
 
+    LOG.infof("Fetching department with id: %d",
+            request.getDepartmentId());
+
+    Department department = departmentRepository
+            .findByIdOptional(request.getDepartmentId())
+            .orElseThrow(() -> {
+                LOG.warnf("Department not found. Id: %d",
+                        request.getDepartmentId());
+                return new NotFoundException("Department not found");
+            });
+
+    Employee manager = null;
+
+    if (request.getManagerId() != null) {
+
+        LOG.infof("Fetching manager with id: %d",
+                request.getManagerId());
+
+        manager = repository.findByIdOptional(request.getManagerId())
+                .orElseThrow(() -> {
+                    LOG.warnf("Manager not found. Id: %d",
+                            request.getManagerId());
+                    return new NotFoundException("Manager Not Found");
+                });
+
+        if (manager.getRole() != Role.MANAGER) {
+            LOG.warnf("Employee %d is not a manager",
+                    manager.getId());
+
+            throw new IllegalArgumentException(
+                    "Selected employee is not a manager");
+        }
+    }
+
+    if (request.getRole() == Role.MANAGER) {
+        if (request.getManagerId() != null) {
+
+            LOG.warn("Attempted to assign a manager to another manager");
+
+            throw new ForbiddenException(
+                    "Manager cant be assigned to manager");
+        }
+    }
+
+    LOG.info("Mapping request to Employee entity");
+
+    Employee createEmployee =
+            mapper.toEntity(request, department, manager);
+
+    String characters =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    String password =
+            RandomStringUtils.secure().next(8, characters);
+
+    LOG.infof("Generated temporary password for employee: %s",
+            request.getEmail());
+
+    LOG.info(password + "password of employee");
+
+    String hashedPassword =
+            BCrypt.hashpw(password, BCrypt.gensalt());
+
+    createEmployee.setPassword(hashedPassword);
+
+    LOG.info("Persisting employee");
+
+    repository.persist(createEmployee);
+
+    LOG.infof("Employee created successfully. Id: %d, Email: %s",
+            createEmployee.getId(),
+            createEmployee.getEmail());
+
+    return mapper.toResponse(createEmployee);
+}
 
     public PaginatedResponse<EmployeeResponse> getAllEmployees(Integer page, Integer size) {
 
